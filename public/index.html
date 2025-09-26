@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Healthzine Feed</title>
+
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXX"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'AW-11029574245');
+    gtag('config', 'G-E2N41L1CCR');
+  </script>
+
+  <link rel="stylesheet" href="/public/styles.css">
+  <link rel="icon" href="/public/assets/hhlogo.png">
+</head>
+<body>
+  <header class="site-header">
+    <div class="nav-left">
+      <a class="logo" href="/"><img src="/public/assets/healthzine.png" alt="Logo"></a>
+    </div>
+    <button class="hamburger" id="hamburger" aria-label="Toggle navigation" aria-expanded="false">☰</button>
+    <nav id="nav" class="nav">
+      <ul class="nav-list">
+        <li><a href="https://www.happiesthealth.com/">Knowledge</a></li>
+        <li><a href="https://diagnostics.happiesthealth.com/">Diagnostics</a></li>
+        <li><a href="https://clinics.happiesthealth.com/">Clinics</a></li>
+        <li><a href="https://www.happiesthealth.com/magazine-subscription">Magazine</a></li>
+        <li><a href="https://www.happiesthealth.com/wellnessprograms">Health Summits</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <!-- Controls row on right side -->
+  <div class="controls-bar">
+    <select id="langSelect" class="lang-select" aria-label="Language"></select>
+    <label class="theme-toggle">
+      <input type="checkbox" id="themeToggle" aria-label="Toggle dark mode">
+      <span data-i18n="ui.darkMode">Dark Mode</span>
+    </label>
+  </div>
+
+  <main id="feed" class="feed" aria-live="polite">
+    <!-- Posts will be appended here -->
+  </main>
+  <div id="sentinel" class="sentinel" aria-hidden="true"></div>
+
+  <template id="postTemplate">
+    <article class="post" id="">
+      <img class="post-image" loading="lazy" alt="">
+      <div class="post-text">
+        <h2 class="headline"></h2>
+        <p class="strap"></p>
+      </div>
+      <div class="share">
+        <button class="share-btn" data-share="x" aria-label="Share to X">X</button>
+        <button class="share-btn" data-share="facebook" aria-label="Share to Facebook">f</button>
+        <button class="share-btn" data-share="whatsapp" aria-label="Share to WhatsApp">WA</button>
+        <button class="share-btn" data-share="linkedin" aria-label="Share to LinkedIn">in</button>
+        <button class="share-btn" data-share="instagram" aria-label="Share to Instagram">IG</button>
+        <button class="share-btn" data-share="copy" aria-label="Copy Link">⧉</button>
+      </div>
+    </article>
+  </template>
+
+  <script src="/public/i18n.js"></script>
+  <script src="/public/common.js"></script>
+  <script src="/public/app.js"></script>
+
+  <!-- Floating Subscribe Button -->
+  <button id="fab-subscribe" class="fab">
+    Subscribe to our Daily Healthzine
+  </button>
+
+
+</body>
+</html>

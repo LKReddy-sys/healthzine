@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title><%= post.headline || 'HealthZine Post' %></title>
+
+  <!-- ✅ Social Media OpenGraph (Facebook, LinkedIn, WhatsApp) -->
+  <meta property="og:title" content="<%= post.headline || 'HealthZine Post' %>" />
+  <meta property="og:description" content="<%= post.strap || 'Check this post on HealthZine!' %>" />
+  <meta property="og:image" content="<%= post.imageUrl %>" />
+  <meta property="og:url" content="<%= post.shareUrl %>" />
+  <meta property="og:type" content="article" />
+
+  <!-- ✅ Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="<%= post.headline || 'HealthZine Post' %>" />
+  <meta name="twitter:description" content="<%= post.strap || 'Check this post on HealthZine!' %>" />
+  <meta name="twitter:image" content="<%= post.imageUrl %>" />
+
+  <link rel="stylesheet" href="/public/styles.css" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="nav-left">
+      <a class="logo" href="/"><img src="/public/assets/healthzine.png" alt="Logo" /></a>
+    </div>
+    <nav class="nav open">
+      <ul class="nav-list">
+        <li><a href="/">Home</a></li>
+        <li><a href="/admin">Dashboard</a></li>
+        <li><a href="/admin/create">Create Post</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <main class="feed" style="max-width:680px">
+    <article class="post" style="padding:1rem">
+      <h1><%= post.headline || 'Untitled Post' %></h1>
+      <% if (post.strap) { %>
+        <p><%= post.strap %></p>
+      <% } %>
+
+      <img src="<%= post.imageUrl %>" alt="<%= post.imageAlt || '' %>" style="max-width:100%;border-radius:.5rem;margin:1rem 0;" />
+
+      <% if (post.linkUrl) { %>
+        <p><a href="<%= post.linkUrl %>" target="_blank" class="share-btn">Read More</a></p>
+      <% } %>
+
+      <div style="margin-top:1rem">
+        <p><strong>Share this post:</strong></p>
+        <a href="https://www.facebook.com/sharer/sharer.php?u=<%= encodeURIComponent(post.shareUrl) %>" target="_blank">Facebook</a> |
+        <a href="https://twitter.com/intent/tweet?url=<%= encodeURIComponent(post.shareUrl) %>&text=<%= encodeURIComponent(post.headline) %>" target="_blank">Twitter</a> |
+        <a href="https://www.linkedin.com/shareArticle?mini=true&url=<%= encodeURIComponent(post.shareUrl) %>&title=<%= encodeURIComponent(post.headline) %>" target="_blank">LinkedIn</a> |
+        <a href="https://wa.me/?text=<%= encodeURIComponent(post.headline + ' ' + post.shareUrl) %>" target="_blank">WhatsApp</a>
+      </div>
+    </article>
+  </main>
+
+  <script src="/public/i18n.js"></script>
+  <script src="/public/common.js"></script>
+</body>
+</html>

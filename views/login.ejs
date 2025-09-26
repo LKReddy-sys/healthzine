@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Admin Login</title>
+  <link rel="stylesheet" href="/public/styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="nav-left">
+      <a class="logo" href="/"><img src="/public/assets/healthzine.png" alt="Logo"></a>
+    </div>
+    <nav class="nav open">
+      <div class="controls">
+        <select id="langSelect" class="lang-select" aria-label="Language"></select>
+        <label class="theme-toggle">
+          <input type="checkbox" id="themeToggle" aria-label="Toggle dark mode">
+          <span data-i18n="ui.darkMode">Dark Mode</span>
+        </label>
+      </div>
+    </nav>
+  </header>
+
+  <main class="feed" style="max-width:480px">
+    <form action="/admin/login" method="post" class="post" style="padding:1rem">
+      <h1 data-i18n="admin.login" style="margin:.25rem 0 1rem">Login</h1>
+      <% if (error) { %>
+        <p style="color:#ef4444"><%= error %></p>
+      <% } %>
+      <label>
+        <span data-i18n="admin.username">Username</span><br>
+        <input type="text" name="username" required style="width:100%;padding:.5rem;border:1px solid var(--border);border-radius:.5rem;background:var(--bg);color:var(--text)">
+      </label>
+      <br><br>
+      <label>
+        <span data-i18n="admin.password">Password</span><br>
+        <input type="password" name="password" required style="width:100%;padding:.5rem;border:1px solid var(--border);border-radius:.5rem;background:var(--bg);color:var(--text)">
+      </label>
+      <br><br>
+      <button class="share-btn" type="submit" data-i18n="admin.submit">Sign in</button>
+    </form>
+  </main>
+
+  <script src="/public/i18n.js"></script>
+  <script src="/public/common.js"></script>
+</body>
+</html>

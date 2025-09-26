@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Manage Editors</title>
+  <link rel="stylesheet" href="/public/styles.css">
+  <style>
+    table{width:100%;border-collapse:collapse;margin-top:1rem}
+    th,td{border:1px solid var(--border);padding:.5rem;text-align:left}
+    th{background:var(--card)}
+    td.actions{white-space:nowrap}
+    .btn{display:inline-block;padding:.3rem .6rem;margin-right:.25rem;border:1px solid var(--border);border-radius:.4rem;background:var(--bg);color:var(--text);cursor:pointer;text-decoration:none;font-size:.9rem}
+    .btn:hover{border-color:var(--accent)}
+    .grid-2{display:grid;gap:1rem;grid-template-columns:1fr}
+    @media (min-width: 900px){.grid-2{grid-template-columns:1fr 1fr}}
+    .notice{padding:.75rem;border:1px solid var(--accent);border-radius:.5rem;background:rgba(37,99,235,.08);margin:.5rem 0}
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <div class="nav-left">
+      <a class="logo" href="/"><img src="/public/assets/healthzine.png" alt="Logo"></a>
+    </div>
+    <nav class="nav open">
+      <ul class="nav-list">
+        <li><a href="/admin">Dashboard</a></li>
+        <li><a href="/admin/create">Create Post</a></li>
+        <li><a href="/admin/password">Change Password</a></li>
+        <li><a href="/admin/users">Manage Editors</a></li>
+        <% if (user && user.role === 'admin') { %>
+            <li><a href="/admin/activity">Activity</a></li>
+        <% } %>
+        <li><a href="/admin/logout">Logout</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <main class="feed" style="max-width:1000px">
+    <section class="grid-2">
+      <!-- Create Editor -->
+      <div class="post" style="padding:1rem">
+        <h2>Create Editor</h2>
+        <form action="/admin/users/create" method="post">
+          <label>Username<br>
+            <input name="username" required style="width:100%;padding:.5rem">
+          </label><br><br>
+          <label>Email (optional, to send credentials)<br>
+            <input type="email" name="email" style="width:100%;padding:.5rem">
+          </label><br><br>
+          <fieldset style="border:1px solid var(--border);padding:.75rem;border-radius:.5rem">
+            <legend>Languages</legend>
+            <% (allLangs || []).forEach(l => { %>
+              <label style="display:inline-flex;gap:.4rem;margin:.25rem 1rem .25rem 0">
+                <input type="checkbox" name="languages" value="<%= l.code %>">
+                <span><%= l.label %></span>
+              </label>
+            <% }) %>
+          </fieldset>
+          <br>
+          <button class="share-btn" type="submit">Create Editor</button>
+        </form>
+      </div>
+
+      <!-- Users list -->
+      <div class="post" style="padding:1rem">
+        <h2>Users</h2>
+        <table>
+            <thead>
+                <tr>
+                <th>ID</th>
+                <th>Username</th>
+                <th>Email</th>
+                <th>Role</th>
+                <th>Languages</th>
+                <th>Joined</th>
+                <th>Status</th>
+                <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% users.forEach(u => { %>
+                <tr>
+                    <td><%= u.id %></td>
+                    <td><%= u.username %></td>
+                    <td><%= u.email || '-' %></td>
+                    <td><%= u.role %></td>
+                    <td><%= u.languages %></td>
+                    <td><%= u.created_at %></td>
+                    <td><%= u.blocked ? 'Blocked' : 'Active' %></td>
+                    <td class="actions">
+                    <% if (u.role !== 'admin') { %>
+                        <% if (u.blocked) { %>
+                        <a href="/admin/users/unblock/<%= u.id %>" class="btn">Unblock</a>
+                        <% } else { %>
+                        <a href="/admin/users/block/<%= u.id %>" class="btn">Block</a>
+                        <% } %>
+                        <a href="/admin/users/delete/<%= u.id %>" class="btn" onclick="return confirm('Delete this user?')">Delete</a>
+                    <% } else { %>
+                        <em>Admin</em>
+                    <% } %>
+                    </td>
+                </tr>
+                <% }) %>
+            </tbody>
+        </table>
+
+      </div>
+    </section>
+  </main>
+</body>
+</html>

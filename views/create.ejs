@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Create Post</title>
+  <link rel="stylesheet" href="/public/styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="nav-left">
+      <a class="logo" href="/"><img src="/public/assets/logo.svg" alt="Logo"></a>
+    </div>
+    <nav class="nav open">
+      <ul class="nav-list">
+        <li><a href="/admin" data-i18n="admin.dashboard">Dashboard</a></li>
+        <li><a href="/admin/create" data-i18n="admin.create">Create Post</a></li>
+        <li><a href="/admin/logout" data-i18n="admin.logout">Logout</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <!-- Controls row below nav -->
+  <div class="controls-bar">
+    <select id="langSelect" class="lang-select" aria-label="Language"></select>
+    <label class="theme-toggle">
+      <input type="checkbox" id="themeToggle" aria-label="Toggle dark mode">
+      <span data-i18n="ui.darkMode">Dark Mode</span>
+    </label>
+  </div>
+
+  <main class="feed" style="max-width:680px">
+    <form class="post" style="padding:1rem" action="/admin/create" method="post" enctype="multipart/form-data">
+      <h1 data-i18n="admin.create">Create Post</h1>
+      <p style="color:var(--muted)">If you leave Headline and Strap empty, they won't appear on the frontend (only the image and share buttons will show).</p>
+
+      <label>
+        <span data-i18n="admin.headline">Headline</span><br>
+        <input type="text" name="headline" placeholder="" style="width:100%;padding:.5rem;border:1px solid var(--border);border-radius:.5rem;background:var(--bg);color:var(--text)">
+      </label>
+      <br><br>
+
+      <label>
+        <span data-i18n="admin.strap">Strap</span><br>
+        <input type="text" name="strap" placeholder="" style="width:100%;padding:.5rem;border:1px solid var(--border);border-radius:.5rem;background:var(--bg);color:var(--text)">
+      </label>
+      <br><br>
+
+      <!-- Language selection -->
+      <% if (isAdmin || languages.length > 1) { %>
+        <!-- Admin or multi-language editor: show dropdown -->
+        <label>
+          <span>Language</span><br>
+          <select name="language" required style="width:100%;padding:.5rem;border:1px solid var(--border);border-radius:.5rem;background:var(--bg);color:var(--text)">
+            <% languages.forEach(l => { %>
+              <option value="<%= l.code %>"><%= l.label %></option>
+            <% }) %>
+          </select>
+        </label>
+        <br><br>
+      <% } else { %>
+        <!-- Single-language editor: fixed language -->
+        <p><strong>Language:</strong> <%= languages[0].label %></p>
+        <input type="hidden" name="language" value="<%= languages[0].code %>">
+      <% } %>
+
+      <label>
+        <span data-i18n="admin.image">Image</span><br>
+        <input type="file" name="image" accept="image/*" required style="width:100%;padding:.5rem;border:1px solid var(--border);border-radius:.5rem;background:var(--bg);color:var(--text)">
+      </label>
+      <br><br>
+
+      <label>
+        <span data-i18n="admin.imageAlt">Image Alt Text</span><br>
+        <input type="text" name="imageAlt" placeholder="Describe the image for accessibility & SEO" style="width:100%;padding:.5rem;border:1px solid var(--border);border-radius:.5rem;background:var(--bg);color:var(--text)">
+      </label>
+      <br><br>
+
+      <label>
+        <span>Redirect URL (optional)</span><br>
+        <input type="url" name="linkUrl" placeholder="https://example.com" style="width:100%;padding:.5rem;border:1px solid var(--border);border-radius:.5rem;background:var(--bg);color:var(--text)">
+      </label>
+      <br><br>
+
+      <button class="share-btn" type="submit" data-i18n="admin.save">Save</button>
+    </form>
+  </main>
+
+  <script src="/public/i18n.js"></script>
+  <script src="/public/common.js"></script>
+</body>
+</html>

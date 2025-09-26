@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Admin Activity</title>
+  <link rel="stylesheet" href="/public/styles.css" />
+  <style>
+    table{width:100%;border-collapse:collapse;margin-top:1rem}
+    th,td{border:1px solid var(--border);padding:.5rem;text-align:left}
+    th{background:var(--card)}
+
+    /* ✅ Page layout */
+    .activity-main{
+      padding:140px .75rem 4rem;
+    }
+    .activity-wrap{
+      max-width:1200px;
+      margin:0 auto;
+    }
+
+    .grid-3{display:grid; gap:1rem; grid-template-columns:1fr}
+    @media (min-width:1100px){.grid-3{grid-template-columns:1fr 1fr 1fr}}
+
+    .muted{color:var(--muted);font-size:.9rem}
+    code{background:var(--card);padding:.1rem .3rem;border-radius:.25rem}
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <div class="nav-left">
+      <a class="logo" href="/"><img src="/public/assets/healthzine.png" alt="Logo" /></a>
+    </div>
+    <nav class="nav open">
+      <ul class="nav-list">
+        <li><a href="/admin">Dashboard</a></li>
+        <li><a href="/admin/create">Create Post</a></li>
+        <li><a href="/admin/users">Manage Editors</a></li>
+        <li><a href="/admin/password">Change Password</a></li>
+        <li><a href="/admin/logout">Logout</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <div class="controls-bar"></div>
+
+  <main class="activity-main">
+    <div class="activity-wrap">
+      <!-- ✅ wrapped inside container -->
+      <section class="post" style="padding:1rem">
+        <h1>Activity</h1>
+        <p class="muted">Latest logins, per-user post counts, and recent actions.</p>
+      </section>
+
+      <section class="grid-3">
+        <div class="post" style="padding:1rem">
+          <h2>Recent Logins</h2>
+          <table>
+            <thead>
+              <tr><th>When</th><th>User</th><th>Role</th><th>IP</th><th>User Agent</th></tr>
+            </thead>
+            <tbody>
+              <% (logins || []).forEach(l => { %>
+                <tr>
+                  <td><%= l.login_time %></td>
+                  <td><%= l.username %></td>
+                  <td><%= l.role %></td>
+                  <td><%= l.ip || '-' %></td>
+                  <td class="muted"><%= l.user_agent || '-' %></td>
+                </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="post" style="padding:1rem">
+          <h2>Posts Created (by user)</h2>
+          <table>
+            <thead>
+              <tr><th>User</th><th>Role</th><th>Languages</th><th>Count</th></tr>
+            </thead>
+            <tbody>
+              <% (counts || []).forEach(c => { %>
+                <tr>
+                  <td><%= c.username %></td>
+                  <td><%= c.role %></td>
+                  <td><%= c.languages %></td>
+                  <td><%= c.posts_created %></td>
+                </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="post" style="padding:1rem">
+          <h2>Recent Actions</h2>
+          <table>
+            <thead>
+              <tr><th>When</th><th>User</th><th>Action</th><th>Post</th><th>Meta</th></tr>
+            </thead>
+            <tbody>
+              <% (activity || []).forEach(a => { %>
+                <tr>
+                  <td><%= a.created_at %></td>
+                  <td><%= a.username %></td>
+                  <td><%= a.action %></td>
+                  <td><%= a.post_id || '-' %></td>
+                  <td class="muted"><%= a.meta || '-' %></td>
+                </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <script src="/public/i18n.js"></script>
+  <script src="/public/common.js"></script>
+</body>
+</html>

@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Admin Dashboard</title>
+  <link rel="stylesheet" href="/public/styles.css">
+  <style>
+    table{width:100%;border-collapse:collapse;margin-top:1rem}
+    th,td{border:1px solid var(--border);padding:.5rem;text-align:left}
+    th{background:var(--card)}
+    td.actions{white-space:nowrap}
+    .btn{display:inline-block;padding:.3rem .6rem;margin-right:.25rem;border:1px solid var(--border);border-radius:.4rem;background:var(--bg);color:var(--text);cursor:pointer;text-decoration:none;font-size:.9rem}
+    .btn:hover{border-color:var(--accent)}
+    .lang-tabs{display:flex;gap:.5rem;flex-wrap:wrap;margin:.75rem 0}
+    .lang-tabs a{padding:.35rem .6rem;border:1px solid var(--border);border-radius:.4rem;text-decoration:none;color:var(--text)}
+    .lang-tabs a.active{border-color:var(--accent);font-weight:600}
+    .notice{padding:.75rem;border:1px solid var(--accent);border-radius:.5rem;background:rgba(37,99,235,.08);margin:.5rem 0}
+    code{background:var(--card);padding:.1rem .3rem;border-radius:.25rem}
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <div class="nav-left">
+      <a class="logo" href="/"><img src="/public/assets/healthzine.png" alt="Logo"></a>
+    </div>
+    <nav class="nav open">
+      <ul class="nav-list">
+        <li><a href="/admin">Dashboard</a></li>
+        <li><a href="/admin/create">Create Post</a></li>
+        <li><a href="/admin/password">Change Password</a></li>
+
+        <% if (user && user.role === 'admin') { %>
+          <li><a href="/admin/users">Manage Editors</a></li>
+        <% } %>
+
+        <% if (user && user.role === 'admin') { %>
+          <li><a href="/admin/activity">Activity</a></li>
+        <% } %>
+
+        <li><a href="/admin/logout">Logout</a></li>
+      </ul>
+      <div class="controls">
+        <select id="langSelect" class="lang-select" aria-label="Language"></select>
+        <label class="theme-toggle">
+          <input type="checkbox" id="themeToggle" aria-label="Toggle dark mode">
+          <span>Dark Mode</span>
+        </label>
+      </div>
+    </nav>
+  </header>
+
+  <main class="feed" style="max-width:1000px">
+    <section class="post" style="padding:1rem">
+      <h1>Dashboard</h1>
+      <p>Total posts: <strong><%= posts.length %></strong></p>
+      <p><a class="share-btn" href="/admin/create">Create Post</a></p>
+
+      <div class="lang-tabs">
+        <% (languages || []).forEach(l => { %>
+          <a href="/admin?lang=<%= l.code %>" class="<%= currentLang === l.code ? 'active' : '' %>"><%= l.label %></a>
+        <% }) %>
+      </div>
+
+      <% if (flash && flash.createdUser) { %>
+        <div class="notice">
+          <strong>New editor created.</strong>
+          <div>Share these credentials securely (shown only once):</div>
+          <div>Username: <code><%= flash.createdUser.username %></code></div>
+          <div>Password: <code><%= flash.createdUser.password %></code></div>
+          <div>Languages: <code><%= flash.createdUser.languages %></code></div>
+          <% if (flash.createdUser.email && flash.createdUser.email !== '-') { %>
+            <div>Email: <%= flash.createdUser.email %> (emailed if SMTP was configured)</div>
+          <% } %>
+        </div>
+      <% } %>
+
+      <% if (flash && flash.error) { %>
+        <div class="notice" style="border-color:#ef4444;background:rgba(239,68,68,.08)">Error: <%= flash.error %></div>
+      <% } %>
+    </section>
+
+    <section class="post" style="padding:1rem">
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Headline</th>
+            <th>Strap</th>
+            <th>Image Alt</th>
+            <th>Language</th>
+            <th>Date</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% posts.forEach(post => { %>
+            <tr>
+              <td><%= post.id %></td>
+              <td><%= post.headline || '-' %></td>
+              <td><%= post.strap || '-' %></td>
+              <td><%= post.image_alt || '-' %></td>
+              <td><%= post.language || 'en' %></td>
+              <td><%= post.created_at %></td>
+              <td class="actions">
+                <a href="/admin/edit/<%= post.id %>" class="btn">Edit</a>
+                <% if (user && user.role === 'admin') { %>
+                  <a href="/admin/delete/<%= post.id %>" class="btn" onclick="return confirm('Delete this post?')">Delete</a>
+                <% } %>
+              </td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </section>
+  </main>
+
+  <script src="/public/i18n.js"></script>
+  <script src="/public/common.js"></script>
+</body>
+</html>

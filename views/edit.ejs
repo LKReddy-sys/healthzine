@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Edit Post</title>
+  <link rel="stylesheet" href="/public/styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="nav-left">
+      <a class="logo" href="/"><img src="/public/assets/healthzine.png" alt="Logo"></a>
+    </div>
+    <nav class="nav open">
+      <ul class="nav-list">
+        <li><a href="/admin" data-i18n="admin.dashboard">Dashboard</a></li>
+        <li><a href="/admin/create" data-i18n="admin.create">Create Post</a></li>
+        <li><a href="/admin/logout" data-i18n="admin.logout">Logout</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <div class="controls-bar">
+    <select id="langSelect" class="lang-select" aria-label="Language"></select>
+    <label class="theme-toggle">
+      <input type="checkbox" id="themeToggle" aria-label="Toggle dark mode">
+      <span data-i18n="ui.darkMode">Dark Mode</span>
+    </label>
+  </div>
+
+  <main class="feed" style="max-width:680px">
+    <form class="post" style="padding:1rem" action="/admin/edit/<%= post.id %>" method="post" enctype="multipart/form-data">
+      <h1>Edit Post</h1>
+
+      <label>
+        <span>Headline</span><br>
+        <input type="text" name="headline" value="<%= post.headline || '' %>" style="width:100%;padding:.5rem;border:1px solid var(--border);border-radius:.5rem;">
+      </label>
+      <br><br>
+
+      <label>
+        <span>Strap</span><br>
+        <input type="text" name="strap" value="<%= post.strap || '' %>" style="width:100%;padding:.5rem;border:1px solid var(--border);border-radius:.5rem;">
+      </label>
+      <br><br>
+
+      <label>
+        <span>Language</span><br>
+        <select name="language" style="width:100%;padding:.5rem;border:1px solid var(--border);border-radius:.5rem;">
+          <option value="en" <%= post.language === 'en' ? 'selected' : '' %>>English</option>
+          <option value="hi" <%= post.language === 'hi' ? 'selected' : '' %>>Hindi</option>
+          <option value="te" <%= post.language === 'te' ? 'selected' : '' %>>Telugu</option>
+          <option value="ml" <%= post.language === 'ml' ? 'selected' : '' %>>Malayalam</option>
+          <option value="ta" <%= post.language === 'ta' ? 'selected' : '' %>>Tamil</option>
+          <option value="kn" <%= post.language === 'kn' ? 'selected' : '' %>>Kannada</option>
+          <option value="bn" <%= post.language === 'bn' ? 'selected' : '' %>>Bangla</option>
+          <option value="gu" <%= post.language === 'gu' ? 'selected' : '' %>>Gujarati</option>
+          <option value="mr" <%= post.language === 'mr' ? 'selected' : '' %>>Marathi</option>
+        </select>
+      </label>
+      <br><br>
+
+      <label>
+        <span>Current Image</span><br>
+        <img src="/<%= post.image_path %>" alt="<%= post.image_alt || '' %>" style="max-width:200px;border-radius:.5rem;">
+      </label>
+      <br><br>
+
+      <label>
+        <span>Upload New Image (optional)</span><br>
+        <input type="file" name="image" accept="image/*" style="width:100%;padding:.5rem;border:1px solid var(--border);border-radius:.5rem;">
+      </label>
+      <br><br>
+
+      <label>
+        <span>Image Alt Text</span><br>
+        <input type="text" name="imageAlt" value="<%= post.image_alt || '' %>" style="width:100%;padding:.5rem;border:1px solid var(--border);border-radius:.5rem;">
+      </label>
+      <br><br>
+
+      <label>
+        <span>Redirect URL</span><br>
+        <input type="url" name="linkUrl" value="<%= post.link_url || '' %>" placeholder="https://example.com" style="width:100%;padding:.5rem;border:1px solid var(--border);border-radius:.5rem;">
+      </label>
+      <br><br>
+
+      <button class="share-btn" type="submit">Update</button>
+    </form>
+  </main>
+
+  <script src="/public/i18n.js"></script>
+  <script src="/public/common.js"></script>
+</body>
+</html>
