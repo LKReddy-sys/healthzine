@@ -29,12 +29,18 @@ const PORT = process.env.PORT || 3000;
 app.set('trust proxy', 1);
 
 // --- Ensure uploads dir exists ---
-const uploadsDir = path.join(__dirname, 'uploads');
+// Local:  ./uploads    | Render: /tmp/uploads
+const uploadsDir = process.env.UPLOADS_DIR || path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
 
+
 // --- SQLite ---
-const dbFile = path.join(__dirname, 'data.sqlite');
+// Local:  ./data.sqlite    | Render: /tmp/healthzine.sqlite
+const dbFile = process.env.SQLITE_FILE || path.join(__dirname, 'data.sqlite');
+const dbDir = path.dirname(dbFile);
+if (!fs.existsSync(dbDir)) fs.mkdirSync(dbDir, { recursive: true });
 const db = new sqlite3.Database(dbFile);
+
 
 db.serialize(() => {
   db.run(`CREATE TABLE IF NOT EXISTS posts (
@@ -60,14 +66,6 @@ db.serialize(() => {
   )`);
 });
 
-  // NEW: Logins table
-  db.run(`CREATE TABLE IF NOT EXISTS logins (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER NOT NULL,
-    login_time DATETIME DEFAULT CURRENT_TIMESTAMP,
-    ip TEXT,
-    user_agent TEXT
-  )`);
 
 // Track successful logins
 db.run(`CREATE TABLE IF NOT EXISTS logins (
