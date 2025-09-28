@@ -249,15 +249,21 @@ app.get('/api/languages', (_req, res) => {
 });
 
 // Share page
+// Share page
 app.get('/post/:id', (req, res) => {
   const id = req.params.id;
   db.get('SELECT * FROM posts WHERE id = ?', [id], (err, row) => {
     if (err) return res.status(500).send('DB error');
     if (!row) return res.status(404).send('Post not found');
 
-    // ✅ Prefer BASE_URL from .env, else fallback to request host
     const base = (process.env.BASE_URL || `${req.protocol}://${req.get('host')}`).replace(/\/$/, '');
 
+    // If link_url exists, redirect directly
+    if (row.link_url) {
+      return res.redirect(row.link_url);
+    }
+
+    // Otherwise render internal share page
     res.render('share', {
       post: {
         ...row,
@@ -267,6 +273,7 @@ app.get('/post/:id', (req, res) => {
     });
   });
 });
+
 
 
 // --- Login/Logout (DB-based) ---
