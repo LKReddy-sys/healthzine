@@ -44,15 +44,24 @@ const db = new sqlite3.Database(dbFile);
 
 db.serialize(() => {
   db.run(`CREATE TABLE IF NOT EXISTS posts (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    headline TEXT,
-    strap TEXT,
-    image_path TEXT NOT NULL,
-    image_alt TEXT,
-    language TEXT DEFAULT 'en',
-    link_url TEXT,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-  )`);
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  headline TEXT,
+  strap TEXT,
+  image_path TEXT NOT NULL,
+  image_alt TEXT,
+  language TEXT DEFAULT 'en',
+  link_url TEXT,
+  created_by INTEGER,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+)`);
+
+// Ensure 'created_by' exists in posts (safe for repeated runs)
+db.run(`ALTER TABLE posts ADD COLUMN created_by INTEGER`, (err) => {
+  if (err && !/duplicate column/i.test(err.message)) {
+    console.error('Could not add posts.created_by column:', err.message);
+  }
+});
+
 
   // NEW: Users table
   db.run(`CREATE TABLE IF NOT EXISTS users (
