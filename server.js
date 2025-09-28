@@ -55,12 +55,6 @@ db.serialize(() => {
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 )`);
 
-// Ensure 'created_by' exists in posts (safe for repeated runs)
-db.run(`ALTER TABLE posts ADD COLUMN created_by INTEGER`, (err) => {
-  if (err && !/duplicate column/i.test(err.message)) {
-    console.error('Could not add posts.created_by column:', err.message);
-  }
-});
 
 
   // NEW: Users table
