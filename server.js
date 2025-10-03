@@ -1,9 +1,9 @@
+// server.js
 import express from 'express';
 import session from 'express-session';
 import path from 'path';
 import fs from 'fs';
 import multer from 'multer';
-// import sqlite3 from 'sqlite3';
 import bcrypt from 'bcrypt';
 import nodemailer from 'nodemailer';
 import { fileURLToPath } from 'url';
@@ -11,7 +11,6 @@ import { dirname } from 'path';
 import dotenv from 'dotenv';
 import { sendMail } from './utils/mailer.js';
 import db, { initSchema, usingPostgres } from './db.js';
-
 
 dotenv.config();
 
@@ -21,7 +20,6 @@ console.log('SMTP ENV:', {
   user: process.env.SMTP_USER,
   secure: process.env.SMTP_SECURE,
 });
-
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -34,106 +32,6 @@ app.set('trust proxy', 1);
 // Local:  ./uploads    | Render: /tmp/uploads
 const uploadsDir = process.env.UPLOADS_DIR || path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
-
-
-// // --- SQLite ---
-// // Local:  ./data.sqlite    | Render: /tmp/healthzine.sqlite
-// const dbFile = process.env.SQLITE_FILE || path.join(__dirname, 'data.sqlite');
-// const dbDir = path.dirname(dbFile);
-// if (!fs.existsSync(dbDir)) fs.mkdirSync(dbDir, { recursive: true });
-// const db = new sqlite3.Database(dbFile);
-
-
-// db.serialize(() => {
-//   db.run(`CREATE TABLE IF NOT EXISTS posts (
-//   id INTEGER PRIMARY KEY AUTOINCREMENT,
-//   headline TEXT,
-//   strap TEXT,
-//   image_path TEXT NOT NULL,
-//   image_alt TEXT,
-//   language TEXT DEFAULT 'en',
-//   link_url TEXT,
-//   created_by INTEGER,
-//   created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-// )`);
-
-
-(async () => {
-  try {
-    await initSchema();          // Create tables for PG/SQLite
-    seedAdminIfEmpty();          // Your existing seeding function
-
-    app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
-  } catch (e) {
-    console.error('Failed to init DB schema:', e);
-    process.exit(1);
-  }
-})();
-
-
-  // NEW: Users table
-  db.run(`CREATE TABLE IF NOT EXISTS users (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    username TEXT UNIQUE NOT NULL,
-    email TEXT,
-    password_hash TEXT NOT NULL,
-    role TEXT NOT NULL DEFAULT 'editor', -- 'admin' | 'editor'
-    languages TEXT NOT NULL DEFAULT 'en', -- comma list: en,hi
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-  )`);
-});
-
-
-// Track successful logins
-db.run(`CREATE TABLE IF NOT EXISTS logins (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  user_id INTEGER NOT NULL,
-  ip TEXT,
-  user_agent TEXT,
-  login_time DATETIME DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY(user_id) REFERENCES users(id)
-)`);
-
-// Track important actions
-db.run(`CREATE TABLE IF NOT EXISTS activities (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  user_id INTEGER NOT NULL,
-  action TEXT NOT NULL,          -- 'create' | 'edit' | 'delete'
-  post_id INTEGER,
-  meta TEXT,                     -- JSON blob for extras
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY(user_id) REFERENCES users(id)
-)`);
-
-
-// Ensure 'blocked' column exists (safe on repeated runs)
-db.run(`ALTER TABLE users ADD COLUMN blocked INTEGER NOT NULL DEFAULT 0`, (err) => {
-  if (err && !/duplicate column/i.test(err.message)) {
-    console.error('Could not add users.blocked column:', err.message);
-  }
-});
-
-
-// Seed an admin automatically the first time if table is empty
-function seedAdminIfEmpty() {
-  db.get('SELECT COUNT(*) AS c FROM users', [], async (err, row) => {
-    if (err) return console.error('Seed admin check failed:', err);
-    if (row.c > 0) return;
-    const username = process.env.ADMIN_USER || 'admin';
-    const email = process.env.ADMIN_EMAIL || null;
-    const pass = process.env.ADMIN_PASS || 'admin123';
-    const hash = await bcrypt.hash(pass, 10);
-    db.run(
-      'INSERT INTO users (username,email,password_hash,role,languages) VALUES (?,?,?,?,?)',
-      [username, email, hash, 'admin', 'en,hi,te,ml,ta,kn,bn,gu,mr'],
-      (e) => {
-        if (e) console.error('Seed admin insert failed:', e);
-        else console.log(`Seeded admin user "${username}"`);
-      }
-    );
-  });
-}
-seedAdminIfEmpty();
 
 // --- Session & parsers ---
 app.use(session({
@@ -163,7 +61,6 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage });
 
-
 // --- Helpers & RBAC ---
 const ALL_LANGS = [
   { code: 'en', label: 'English' },
@@ -183,16 +80,12 @@ const pickUserLangs = (req) => {
 };
 const isAdmin = (req) => req.session?.user?.role === 'admin';
 const userCanUseLang = (req, lang) => isAdmin(req) || pickUserLangs(req).includes(lang);
-const genPassword = (len = 12) =>
-  [...cryptoRandom(len)].join('');
 
-function cryptoRandom(n) {
-  // URL-safe random string (A-Z a-z 0-9)
+function genPassword(len = 12) {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789';
-  const out = [];
-  while (out.length < n) {
-    const rnd = Math.floor(Math.random() * chars.length);
-    out.push(chars[rnd]);
+  let out = '';
+  while (out.length < len) {
+    out += chars[Math.floor(Math.random() * chars.length)];
   }
   return out;
 }
@@ -263,7 +156,6 @@ app.get('/api/languages', (_req, res) => {
 });
 
 // Share page
-// Share page
 app.get('/post/:id', (req, res) => {
   const id = req.params.id;
   db.get('SELECT * FROM posts WHERE id = ?', [id], (err, row) => {
@@ -272,12 +164,8 @@ app.get('/post/:id', (req, res) => {
 
     const base = (process.env.BASE_URL || `${req.protocol}://${req.get('host')}`).replace(/\/$/, '');
 
-    // If link_url exists, redirect directly
-    if (row.link_url) {
-      return res.redirect(row.link_url);
-    }
+    if (row.link_url) return res.redirect(row.link_url);
 
-    // Otherwise render internal share page
     res.render('share', {
       post: {
         ...row,
@@ -288,9 +176,7 @@ app.get('/post/:id', (req, res) => {
   });
 });
 
-
-
-// --- Login/Logout (DB-based) ---
+// --- Login/Logout ---
 app.get('/admin/login', (_req, res) => res.render('login', { error: null }));
 
 app.post('/admin/login', (req, res) => {
@@ -298,21 +184,20 @@ app.post('/admin/login', (req, res) => {
   db.get('SELECT * FROM users WHERE username = ?', [username], async (err, u) => {
     if (err) return res.status(500).render('login', { error: 'DB error' });
     if (!u) return res.status(401).render('login', { error: 'Invalid credentials' });
-    if (u.blocked) {
-      return res.status(403).render('login', { error: 'Account blocked by admin' });
-    }
+    if (u.blocked) return res.status(403).render('login', { error: 'Account blocked by admin' });
     const ok = await bcrypt.compare(password, u.password_hash);
     if (!ok) return res.status(401).render('login', { error: 'Invalid credentials' });
+
     req.session.user = {
       id: u.id,
       username: u.username,
       role: u.role,
       languages: u.languages.split(',').map(s => s.trim()).filter(Boolean)
     };
-  db.run(
-    'INSERT INTO logins (user_id, ip, user_agent) VALUES (?, ?, ?)',
-    [u.id, req.ip, req.get('User-Agent')]
-  );
+    db.run(
+      'INSERT INTO logins (user_id, ip, user_agent) VALUES (?, ?, ?)',
+      [u.id, req.ip, req.get('User-Agent')]
+    );
     res.redirect('/admin');
   });
 });
@@ -321,7 +206,7 @@ app.get('/admin/logout', (req, res) => {
   req.session.destroy(() => res.redirect('/admin/login'));
 });
 
-// --- Dashboard (filtered by user languages). Also shows user-management for admins ---
+// --- Dashboard ---
 app.get('/admin', requireAuth, (req, res) => {
   const allowed = pickUserLangs(req);
   const requested = req.query.lang;
@@ -331,13 +216,12 @@ app.get('/admin', requireAuth, (req, res) => {
     if (err) return res.status(500).send('DB error');
 
     const tabLangs = ALL_LANGS.filter(l => allowed.includes(l.code));
-    const allLangs = ALL_LANGS; // for admin user creation form
+    const allLangs = ALL_LANGS;
 
     if (!isAdmin(req)) {
       return res.render('dashboard', { posts: rows, currentLang, languages: tabLangs, allLangs: tabLangs });
     }
 
-    // If admin, also fetch user list to show in dashboard
     db.all('SELECT id, username, email, role, languages, created_at FROM users ORDER BY id DESC', [], (e2, users) => {
       if (e2) return res.status(500).send('DB error (users)');
       res.render('dashboard', { posts: rows, currentLang, languages: tabLangs, allLangs, users });
@@ -348,22 +232,10 @@ app.get('/admin', requireAuth, (req, res) => {
 // --- Create Post ---
 app.get('/admin/create', requireAuth, (req, res) => {
   let choices;
-
-  if (isAdmin(req)) {
-    // Admin sees all languages
-    choices = ALL_LANGS;
-  } else {
-    // Editor sees only their assigned languages
-    const allowed = pickUserLangs(req);
-    choices = ALL_LANGS.filter(l => allowed.includes(l.code));
-  }
-
-  res.render('create', {
-    languages: choices,
-    isAdmin: isAdmin(req)  // pass flag to EJS
-  });
+  if (isAdmin(req)) choices = ALL_LANGS;
+  else choices = ALL_LANGS.filter(l => pickUserLangs(req).includes(l.code));
+  res.render('create', { languages: choices, isAdmin: isAdmin(req) });
 });
-
 
 app.post('/admin/create', requireAuth, upload.single('image'), (req, res) => {
   const { headline, strap, imageAlt, language, linkUrl } = req.body;
@@ -373,7 +245,6 @@ app.post('/admin/create', requireAuth, upload.single('image'), (req, res) => {
 
   const image_path = path.join('uploads', req.file.filename).replace(/\\/g, '/');
 
-  // NOTE: now includes created_by
   const stmt = db.prepare(`
     INSERT INTO posts (headline, strap, image_path, image_alt, language, link_url, created_by)
     VALUES (?, ?, ?, ?, ?, ?, ?)
@@ -386,26 +257,20 @@ app.post('/admin/create', requireAuth, upload.single('image'), (req, res) => {
     imageAlt || null,
     lang,
     linkUrl || null,
-    req.session.user.id,                      // <-- who created it
+    req.session.user.id,
     function (err) {
       if (err) return res.status(500).send('DB error');
-
-      // Log activity
       db.run(
         `INSERT INTO activities (user_id, action, post_id, meta)
          VALUES (?, 'create', ?, ?)`,
         [req.session.user.id, this.lastID, JSON.stringify({ language: lang })]
       );
-
       res.redirect('/admin?lang=' + lang);
     }
   );
 });
 
-
 // --- Edit Post ---
-app.get('/admin/edit', requireAuth, (_req, res) => res.redirect('/admin'));
-
 app.get('/admin/edit/:id', requireAuth, (req, res) => {
   const id = req.params.id;
   db.get('SELECT * FROM posts WHERE id = ?', [id], (err, row) => {
@@ -444,36 +309,24 @@ app.post('/admin/edit/:id', requireAuth, upload.single('image'), (req, res) => {
   });
 });
 
-
 // --- Delete Post (admin only) ---
-app.get(
-  '/admin/delete/:id',
-  requireAuth,
-  (req, res, next) => (isAdmin(req) ? next() : res.status(403).send('Forbidden')),
-  (req, res) => {
-    const postId = req.params.id;
+app.get('/admin/delete/:id', requireAuth, requireAdmin, (req, res) => {
+  const postId = req.params.id;
+  db.run('DELETE FROM posts WHERE id = ?', [postId], (err) => {
+    if (err) return res.status(500).send('DB error');
+    db.run(
+      `INSERT INTO activities (user_id, action, post_id, meta)
+       VALUES (?, 'delete', ?, NULL)`,
+      [req.session.user.id, postId]
+    );
+    res.redirect('/admin');
+  });
+});
 
-    db.run('DELETE FROM posts WHERE id = ?', [postId], (err) => {
-      if (err) return res.status(500).send('DB error');
-
-      // ✅ Log the delete activity here
-      db.run(
-        `INSERT INTO activities (user_id, action, post_id, meta)
-         VALUES (?, 'delete', ?, NULL)`,
-        [req.session.user.id, postId]
-      );
-
-      res.redirect('/admin');
-    });
-  }
-);
-
-
-// Create editor (admin only) – auto-generate password, optional email
-app.post('/admin/users/create', requireAuth, (req, res, next) => isAdmin(req) ? next() : res.status(403).send('Forbidden'), async (req, res) => {
+// --- Create Editor (admin only) ---
+app.post('/admin/users/create', requireAuth, requireAdmin, async (req, res) => {
   const { username, email } = req.body;
   let langs = req.body.languages || 'en';
-  // languages can be array or string
   if (Array.isArray(langs)) langs = langs.join(',');
   const passwordPlain = genPassword(12);
   const password_hash = await bcrypt.hash(passwordPlain, 10);
@@ -487,12 +340,11 @@ app.post('/admin/users/create', requireAuth, (req, res, next) => isAdmin(req) ? 
         return res.redirect('/admin');
       }
 
-      // Try sending email (if SMTP configured and email provided)
       if (email) {
-  await sendMail(
-    email,
-    'Your CMS account',
-    `Hello ${username},
+        await sendMail(
+          email,
+          'Your CMS account',
+          `Hello ${username},
 
 An account was created for you.
 
@@ -502,13 +354,10 @@ Password: ${passwordPlain}
 
 Languages: ${langs}
 
-For security, please log in and change your password.
+For security, please log in and change your password.`
+        );
+      }
 
-Thanks`
-  );
-}
-
-      // One-time show on dashboard
       req.session.flash = {
         createdUser: { username, email: email || '-', password: passwordPlain, languages: langs }
       };
@@ -517,38 +366,12 @@ Thanks`
   );
 });
 
-// Change own password (admin & editors)
+// --- Change password ---
 app.get('/admin/password', requireAuth, (req, res) => {
   res.render('password', { error: null, success: null });
 });
 
-
-      // Block an editor (admin only)
-      app.get('/admin/users/block/:id', requireAuth, requireAdmin, (req, res) => {
-        db.run('UPDATE users SET blocked = 1 WHERE id = ?', [req.params.id], (err) => {
-          if (err) return res.status(500).send('DB error');
-          res.redirect('/admin/users');
-        });
-      });
-
-      // Unblock an editor (admin only)
-      app.get('/admin/users/unblock/:id', requireAuth, requireAdmin, (req, res) => {
-        db.run('UPDATE users SET blocked = 0 WHERE id = ?', [req.params.id], (err) => {
-          if (err) return res.status(500).send('DB error');
-          res.redirect('/admin/users');
-        });
-      });
-
-      // Delete an editor (admin only)
-    app.get('/admin/users/delete/:id', requireAuth, requireAdmin, (req, res) => {
-      db.run('DELETE FROM users WHERE id = ?', [req.params.id], (err) => {
-        if (err) return res.status(500).send('DB error');
-        res.redirect('/admin/users');
-      });
-    });
-
-
-  app.post('/admin/password', requireAuth, (req, res) => {
+app.post('/admin/password', requireAuth, (req, res) => {
   const { currentPassword, newPassword } = req.body;
   const uid = req.session.user.id;
   db.get('SELECT * FROM users WHERE id = ?', [uid], async (err, u) => {
@@ -563,7 +386,7 @@ app.get('/admin/password', requireAuth, (req, res) => {
   });
 });
 
-// --- Manage Editors (separate page) ---
+// --- Manage Editors ---
 app.get('/admin/users', requireAuth, requireAdmin, (req, res) => {
   db.all(
     'SELECT id, username, email, role, languages, blocked, created_at FROM users ORDER BY id DESC',
@@ -575,7 +398,6 @@ app.get('/admin/users', requireAuth, requireAdmin, (req, res) => {
   );
 });
 
-// Block/unblock editors
 app.get('/admin/users/block/:id', requireAuth, requireAdmin, (req, res) => {
   db.run('UPDATE users SET blocked = 1 WHERE id = ?', [req.params.id], (err) => {
     if (err) return res.status(500).send('DB error');
@@ -590,9 +412,15 @@ app.get('/admin/users/unblock/:id', requireAuth, requireAdmin, (req, res) => {
   });
 });
 
-// Admin Activity dashboard
+app.get('/admin/users/delete/:id', requireAuth, requireAdmin, (req, res) => {
+  db.run('DELETE FROM users WHERE id = ?', [req.params.id], (err) => {
+    if (err) return res.status(500).send('DB error');
+    res.redirect('/admin/users');
+  });
+});
+
+// --- Activity dashboard ---
 app.get('/admin/activity', requireAuth, requireAdmin, (req, res) => {
-  // 1) Recent logins
   const qLogins = `
     SELECT l.login_time, l.ip, l.user_agent, u.username, u.role, u.languages
     FROM logins l
@@ -600,8 +428,6 @@ app.get('/admin/activity', requireAuth, requireAdmin, (req, res) => {
     ORDER BY l.login_time DESC
     LIMIT 100
   `;
-
-  // 2) Post counts by creator
   const qCounts = `
     SELECT u.id, u.username, u.role, u.languages, COUNT(p.id) AS posts_created
     FROM users u
@@ -609,8 +435,6 @@ app.get('/admin/activity', requireAuth, requireAdmin, (req, res) => {
     GROUP BY u.id
     ORDER BY posts_created DESC, u.username ASC
   `;
-
-  // 3) Recent activity stream
   const qActivity = `
     SELECT a.created_at, a.action, a.post_id, a.meta, u.username
     FROM activities a
@@ -621,25 +445,46 @@ app.get('/admin/activity', requireAuth, requireAdmin, (req, res) => {
 
   db.all(qLogins, [], (e1, logins) => {
     if (e1) return res.status(500).send('DB error (logins)');
-
     db.all(qCounts, [], (e2, counts) => {
       if (e2) return res.status(500).send('DB error (counts)');
-
       db.all(qActivity, [], (e3, activity) => {
         if (e3) return res.status(500).send('DB error (activity)');
-
-        res.render('activity', {
-          logins,
-          counts,
-          activity
-        });
+        res.render('activity', { logins, counts, activity });
       });
     });
   });
 });
 
-
 // --- 404 ---
 app.use((req, res) => res.status(404).send(`Not found: ${req.path}`));
 
-app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
+// --- Init & seed ---
+async function seedAdminIfEmpty() {
+  db.get('SELECT COUNT(*) AS c FROM users', [], async (err, row) => {
+    if (err) return console.error('Seed admin check failed:', err);
+    if (row && row.c > 0) return;
+    const username = process.env.ADMIN_USER || 'admin';
+    const email = process.env.ADMIN_EMAIL || null;
+    const pass = process.env.ADMIN_PASS || 'admin123';
+    const hash = await bcrypt.hash(pass, 10);
+    db.run(
+      'INSERT INTO users (username,email,password_hash,role,languages) VALUES (?,?,?,?,?)',
+      [username, email, hash, 'admin', 'en,hi,te,ml,ta,kn,bn,gu,mr'],
+      (e) => {
+        if (e) console.error('Seed admin insert failed:', e);
+        else console.log(`Seeded admin user "${username}"`);
+      }
+    );
+  });
+}
+
+(async () => {
+  try {
+    await initSchema();   // ✅ Single schema init from db.js
+    seedAdminIfEmpty();   // ✅ Only seed if needed
+    app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
+  } catch (e) {
+    console.error('Failed to init DB schema:', e);
+    process.exit(1);
+  }
+})();

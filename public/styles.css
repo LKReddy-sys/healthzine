@@ -26,26 +26,25 @@ body {
 }
 
 /* Header / Nav */
-
-/* Header */
 .site-header {
   position: fixed;
   top: 0;
-  left: 0;         /* ✅ full width */
-  right: 0;        /* ✅ full width */
+  left: 0;        
+  right: 0;       
   z-index: 1000;
   background: var(--bg, #fff);
   border-bottom: 1px solid var(--border, #ddd);
-  height: 70px; /* lock header height */
-  display: flex;
+  height: 70px; 
+  display: flex;                  /* ✅ one row always */
   align-items: center;
-  padding: 0 1rem; /* ✅ add safe side padding instead */
+  justify-content: space-between; /* ✅ logo left, nav right */
+  padding: 0 1rem; 
 }
 
 /* Controls bar */
 .controls-bar {
   position: fixed;
-  top: 70px; /* exactly header height */
+  top: 70px; 
   right: 0;
   left: 0;
   z-index: 999;
@@ -55,7 +54,7 @@ body {
   padding: 0.5rem 1rem;
   background: var(--bg, #fff);
   border-bottom: 1px solid var(--border, #ddd);
-  height: 60px; /* lock controls height */
+  height: 60px; 
   align-items: center;
 }
 
@@ -67,16 +66,27 @@ body {
   padding: 140px .75rem 4rem; 
 }
 
-/* Default (light mode) */
+/* Logo */
 .logo img {
   content: url("/public/assets/healthzine.png");
-  height: 50px;
+  height: 28px;
+  max-width: 120px;
+  width: auto;
   display: block;
+  object-fit: contain;
 }
 
 /* Dark mode */
 html[data-theme="dark"] .logo img {
   content: url("/public/assets/healthzine-dark.png");
+}
+
+/* Mobile-specific: shrink logo more */
+@media (max-width: 600px) {
+  .logo img {
+    height: 22px;
+    max-width: 90px;
+  }
 }
 
 .hamburger {
@@ -90,7 +100,6 @@ html[data-theme="dark"] .logo img {
 }
 .nav {
   display: none;
-  width: 100%;
 }
 .nav.open { display: block; }
 .nav-list {
@@ -213,15 +222,8 @@ html[data-theme="dark"] .logo img {
 /* Desktop Nav */
 @media (min-width: 900px) {
   .hamburger { display: none; }
-  .site-header {
-    display: grid;
-    grid-template-columns: auto 1fr auto;
-    align-items: center;
-    padding: 0 2rem; /* safe side spacing for desktop */
-  }
   .nav {
-    display: grid;
-    grid-template-columns: 1fr auto;
+    display: flex !important; /* ✅ force nav visible */
     gap: 1rem;
     align-items: center;
   }
