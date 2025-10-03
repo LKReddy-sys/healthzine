@@ -323,48 +323,80 @@ app.get('/admin/delete/:id', requireAuth, requireAdmin, (req, res) => {
   });
 });
 
-// --- Create Editor (admin only) ---
-app.post('/admin/users/create', requireAuth, requireAdmin, async (req, res) => {
-  const { username, email } = req.body;
-  let langs = req.body.languages || 'en';
-  if (Array.isArray(langs)) langs = langs.join(',');
-  const passwordPlain = genPassword(12);
-  const password_hash = await bcrypt.hash(passwordPlain, 10);
+// Create editor (admin only) – auto-generate password, optional email
+app.post(
+  "/admin/users/create",
+  requireAuth,
+  (req, res, next) => (isAdmin(req) ? next() : res.status(403).send("Forbidden")),
+  async (req, res) => {
+    try {
+      const { username, email } = req.body;
+      let langs = req.body.languages || "en";
+      if (Array.isArray(langs)) langs = langs.join(",");
 
-  db.run(
-    'INSERT INTO users (username,email,password_hash,role,languages) VALUES (?,?,?,?,?)',
-    [username.trim(), email || null, password_hash, 'editor', langs],
-    async (err) => {
-      if (err) {
-        req.session.flash = { error: 'Could not create user (username may already exist).' };
-        return res.redirect('/admin');
-      }
+      // Generate password
+      const passwordPlain = genPassword(12);
+      const password_hash = await bcrypt.hash(passwordPlain, 10);
 
-      if (email) {
-        await sendMail(
-          email,
-          'Your CMS account',
-          `Hello ${username},
+      // Insert user
+      db.run(
+        "INSERT INTO users (username,email,password_hash,role,languages) VALUES (?,?,?,?,?)",
+        [username.trim(), email || null, password_hash, "editor", langs],
+        async (err) => {
+          if (err) {
+            console.error("User creation failed:", err.message);
+            req.session.flash = {
+              error: "Could not create user (username may already exist).",
+            };
+            return res.redirect("/admin");
+          }
+
+          // Send email (if configured)
+          if (email) {
+            try {
+              await sendMail(
+                email,
+                "Your CMS account",
+                `Hello ${username},
 
 An account was created for you.
 
-Login URL: ${req.protocol}://${req.get('host')}/admin/login
+Login URL: ${process.env.BASE_URL || req.protocol + "://" + req.get("host")}/admin/login
 Username: ${username}
 Password: ${passwordPlain}
 
 Languages: ${langs}
 
-For security, please log in and change your password.`
-        );
-      }
+For security, please log in and change your password.
 
-      req.session.flash = {
-        createdUser: { username, email: email || '-', password: passwordPlain, languages: langs }
-      };
-      res.redirect('/admin');
+Thanks`
+              );
+            } catch (mailErr) {
+              console.error("Email sending failed:", mailErr.message);
+            }
+          }
+
+          // ✅ Store one-time password in flash and show in dashboard
+          req.session.flash = {
+            createdUser: {
+              username,
+              email: email || "-",
+              password: passwordPlain,
+              languages: langs,
+            },
+          };
+
+          return res.redirect("/admin");
+        }
+      );
+    } catch (e) {
+      console.error("Unexpected error in user creation:", e);
+      req.session.flash = { error: "Unexpected error creating user" };
+      return res.redirect("/admin");
     }
-  );
-});
+  }
+);
+
 
 // --- Change password ---
 app.get('/admin/password', requireAuth, (req, res) => {

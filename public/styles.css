@@ -69,8 +69,8 @@ body {
 /* Logo */
 .logo img {
   content: url("/public/assets/healthzine.png");
-  height: 28px;
-  max-width: 120px;
+  height: 30px;
+  max-width: 200px;
   width: auto;
   display: block;
   object-fit: contain;
