@@ -3,13 +3,15 @@ import session from 'express-session';
 import path from 'path';
 import fs from 'fs';
 import multer from 'multer';
-import sqlite3 from 'sqlite3';
+// import sqlite3 from 'sqlite3';
 import bcrypt from 'bcrypt';
 import nodemailer from 'nodemailer';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 import dotenv from 'dotenv';
 import { sendMail } from './utils/mailer.js';
+import db, { initSchema, usingPostgres } from './db.js';
+
 
 dotenv.config();
 
@@ -34,27 +36,39 @@ const uploadsDir = process.env.UPLOADS_DIR || path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
 
 
-// --- SQLite ---
-// Local:  ./data.sqlite    | Render: /tmp/healthzine.sqlite
-const dbFile = process.env.SQLITE_FILE || path.join(__dirname, 'data.sqlite');
-const dbDir = path.dirname(dbFile);
-if (!fs.existsSync(dbDir)) fs.mkdirSync(dbDir, { recursive: true });
-const db = new sqlite3.Database(dbFile);
+// // --- SQLite ---
+// // Local:  ./data.sqlite    | Render: /tmp/healthzine.sqlite
+// const dbFile = process.env.SQLITE_FILE || path.join(__dirname, 'data.sqlite');
+// const dbDir = path.dirname(dbFile);
+// if (!fs.existsSync(dbDir)) fs.mkdirSync(dbDir, { recursive: true });
+// const db = new sqlite3.Database(dbFile);
 
 
-db.serialize(() => {
-  db.run(`CREATE TABLE IF NOT EXISTS posts (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  headline TEXT,
-  strap TEXT,
-  image_path TEXT NOT NULL,
-  image_alt TEXT,
-  language TEXT DEFAULT 'en',
-  link_url TEXT,
-  created_by INTEGER,
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-)`);
+// db.serialize(() => {
+//   db.run(`CREATE TABLE IF NOT EXISTS posts (
+//   id INTEGER PRIMARY KEY AUTOINCREMENT,
+//   headline TEXT,
+//   strap TEXT,
+//   image_path TEXT NOT NULL,
+//   image_alt TEXT,
+//   language TEXT DEFAULT 'en',
+//   link_url TEXT,
+//   created_by INTEGER,
+//   created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+// )`);
 
+
+(async () => {
+  try {
+    await initSchema();          // Create tables for PG/SQLite
+    seedAdminIfEmpty();          // Your existing seeding function
+
+    app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
+  } catch (e) {
+    console.error('Failed to init DB schema:', e);
+    process.exit(1);
+  }
+})();
 
 
   // NEW: Users table
