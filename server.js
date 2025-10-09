@@ -1,6 +1,5 @@
 // server.js
 import express from 'express';
-import session from 'express-session';
 import path from 'path';
 import fs from 'fs';
 import multer from 'multer';
@@ -33,14 +32,45 @@ app.set('trust proxy', 1);
 const uploadsDir = process.env.UPLOADS_DIR || path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
 
-// --- Session & parsers ---
-app.use(session({
-  secret: process.env.SESSION_SECRET || 'devsecret',
-  resave: false,
-  saveUninitialized: false
-}));
+// --- Sessions ---
+import session from "express-session";
+import pgSession from "connect-pg-simple";
+import pkg from "pg";
+const { Pool } = pkg;
+
+const pgSessionStore = pgSession(session);
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: { rejectUnauthorized: false },
+});
+
+const isProduction = process.env.NODE_ENV === "production";
+
+app.set("trust proxy", 1); // needed for secure cookies behind proxies (Vercel, Render)
+
+app.use(
+  session({
+    store: new pgSessionStore({
+      pool,
+      tableName: "session",
+    }),
+    secret: process.env.SESSION_SECRET || "devsecret",
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      httpOnly: true,
+      secure: isProduction,       // HTTPS only in prod, not locally
+      sameSite: isProduction ? "lax" : "lax", // 'lax' avoids cross-site rejection
+      maxAge: 1000 * 60 * 60 * 24, // 1 day
+    },
+  })
+);
+
+
+// Keep your existing middleware after this
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
+
 
 // --- Static ---
 app.use('/public', express.static(path.join(__dirname, 'public')));
