@@ -84,8 +84,8 @@ html[data-theme="dark"] .logo img {
 /* Mobile-specific: shrink logo more */
 @media (max-width: 600px) {
   .logo img {
-    height: 22px;
-    max-width: 90px;
+    height: 24px;
+    max-width: 120px;
   }
 }
 
@@ -234,5 +234,19 @@ html[data-theme="dark"] .logo img {
   }
   .controls {
     justify-content: flex-end;
+  }
+}
+
+/* Mobile dropdown container */
+@media (max-width: 899px) {
+  .nav {
+    position: absolute;
+    top: 70px;                 /* same as header height */
+    left: 0;
+    right: 0;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    padding: .75rem 1rem;
+    z-index: 1001;            /* above page content, below controls bar (999) is fine too */
   }
 }

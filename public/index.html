@@ -76,6 +76,41 @@
     Subscribe to our Daily Healthzine
   </button>
 
+  <script>
+  (function () {
+    const btn = document.getElementById('hamburger');
+    const nav = document.getElementById('nav');
+
+    if (!btn || !nav) return;
+
+    function toggle() {
+      const open = nav.classList.toggle('open');
+      btn.setAttribute('aria-expanded', String(open));
+    }
+
+    btn.addEventListener('click', toggle);
+
+    // Close when clicking outside the menu
+    document.addEventListener('click', (e) => {
+      if (!nav.contains(e.target) && e.target !== btn) {
+        nav.classList.remove('open');
+        btn.setAttribute('aria-expanded', 'false');
+      }
+    });
+
+    // Close the mobile dropdown if we switch to desktop width
+    const mql = window.matchMedia('(min-width: 900px)');
+    function closeIfDesktop(e) {
+      if (e.matches) {
+        nav.classList.remove('open');
+        btn.setAttribute('aria-expanded', 'false');
+      }
+    }
+    if (mql.addEventListener) mql.addEventListener('change', closeIfDesktop);
+    else mql.addListener(closeIfDesktop); // Safari fallback
+  })();
+</script>
+
 
 </body>
 </html>
