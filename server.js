@@ -3,7 +3,7 @@ import express from 'express';
 import path from 'path';
 import fs from 'fs';
 import multer from 'multer';
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 import nodemailer from 'nodemailer';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
@@ -44,23 +44,25 @@ const pool = new Pool({
   ssl: { rejectUnauthorized: false },
 });
 
-const isProduction = process.env.NODE_ENV === "production";
+const isProduction = process.env.NODE_ENV === 'production';
 
-app.set("trust proxy", 1); // needed for secure cookies behind proxies (Vercel, Render)
+app.set('trust proxy', 1); // required on Vercel
 
 app.use(
   session({
     store: new pgSessionStore({
       pool,
-      tableName: "session",
+      tableName: 'session',
+      createTableIfMissing: true, // helpful on first deploy
     }),
-    secret: process.env.SESSION_SECRET || "devsecret",
+    secret: process.env.SESSION_SECRET || 'devsecret',
     resave: false,
     saveUninitialized: false,
+    proxy: true, // behind reverse proxy
     cookie: {
       httpOnly: true,
-      secure: isProduction,       // HTTPS only in prod, not locally
-      sameSite: isProduction ? "lax" : "lax", // 'lax' avoids cross-site rejection
+      secure: isProduction,                 // ✅ HTTPS on Vercel
+      sameSite: isProduction ? 'none' : 'lax', // ✅ required for HTTPS cookies
       maxAge: 1000 * 60 * 60 * 24, // 1 day
     },
   })
@@ -207,34 +209,91 @@ app.get('/post/:id', (req, res) => {
 });
 
 // --- Login/Logout ---
-app.get('/admin/login', (_req, res) => res.render('login', { error: null }));
+app.get('/admin/login', (req, res) => {
+  const flash = req.session.flash;
+  delete req.session.flash; // ✅ clear it so it doesn't persist on refresh
+  res.render('login', { flash });
+});
 
-app.post('/admin/login', (req, res) => {
+
+app.post('/admin/login', async (req, res) => {
   const { username, password } = req.body;
-  db.get('SELECT * FROM users WHERE username = ?', [username], async (err, u) => {
-    if (err) return res.status(500).render('login', { error: 'DB error' });
-    if (!u) return res.status(401).render('login', { error: 'Invalid credentials' });
-    if (u.blocked) return res.status(403).render('login', { error: 'Account blocked by admin' });
-    const ok = await bcrypt.compare(password, u.password_hash);
-    if (!ok) return res.status(401).render('login', { error: 'Invalid credentials' });
+  console.log(`🟢 Login attempt: ${username}`);
 
+  db.get('SELECT * FROM users WHERE username = ?', [username], async (err, u) => {
+    if (err) {
+      console.error("❌ DB error during login:", err.message);
+      req.session.flash = { error: 'Database error' };
+      return res.redirect('/admin/login');
+    }
+
+    if (!u) {
+      console.warn("⚠️ Login failed: user not found:", username);
+      req.session.flash = { error: 'Invalid credentials' };
+      return res.redirect('/admin/login');
+    }
+
+    if (u.blocked) {
+      console.warn("🚫 Login failed: user blocked:", username);
+      req.session.flash = { error: 'Account blocked by admin' };
+      return res.redirect('/admin/login');
+    }
+
+    const ok = await bcrypt.compare(password, u.password_hash);
+    if (!ok) {
+      console.warn("🔑 Login failed: invalid password for user:", username);
+      req.session.flash = { error: 'Invalid credentials' };
+      return res.redirect('/admin/login');
+    }
+
+    console.log(`✅ Login successful for user: ${u.username}`);
+
+    // ✅ store the session
     req.session.user = {
       id: u.id,
       username: u.username,
       role: u.role,
-      languages: u.languages.split(',').map(s => s.trim()).filter(Boolean)
+      languages: u.languages.split(',').map(s => s.trim()).filter(Boolean),
     };
-    db.run(
-      'INSERT INTO logins (user_id, ip, user_agent) VALUES (?, ?, ?)',
-      [u.id, req.ip, req.get('User-Agent')]
-    );
-    res.redirect('/admin');
+
+    // ✅ wait for session to actually save before redirecting
+    req.session.save((saveErr) => {
+      if (saveErr) {
+        console.error("⚠️ Session save failed:", saveErr);
+        return res.redirect('/admin/login');
+      }
+
+      // Log the login event
+      db.run(
+        'INSERT INTO logins (user_id, ip, user_agent) VALUES (?, ?, ?)',
+        [u.id, req.ip, req.get('User-Agent')]
+      );
+
+      console.log("➡️ Redirecting to /admin...");
+      res.redirect(302, '/admin');
+    });
   });
 });
+
+
+app.get('/admin/session-check', (req, res) => {
+  if (req.session && req.session.user) {
+    return res.json({ loggedIn: true });
+  }
+  res.json({ loggedIn: false });
+});
+
+
 
 app.get('/admin/logout', (req, res) => {
   req.session.destroy(() => res.redirect('/admin/login'));
 });
+
+// Optional alias route — redirect /admin/dashboard to /admin
+app.get('/admin/dashboard', requireAuth, (req, res) => {
+  res.redirect('/admin');
+});
+
 
 // --- Dashboard ---
 app.get('/admin', requireAuth, (req, res) => {

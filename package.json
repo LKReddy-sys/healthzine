@@ -4,13 +4,12 @@
   "description": "Mobile-first responsive feed with admin CMS, infinite scroll, lazy load, dark/light mode, and language switcher.",
   "main": "server.js",
   "type": "module",
-"scripts": {
-  "build": "echo 'Build step not required for Express app'",
-  "start": "node server.js"
-},
-
+  "scripts": {
+    "build": "echo 'Build step not required for Express app'",
+    "start": "node server.js"
+  },
   "dependencies": {
-    "bcrypt": "^6.0.0",
+    "bcryptjs": "^3.0.2",
     "connect-pg-simple": "^10.0.0",
     "dotenv": "^16.6.1",
     "ejs": "^3.1.9",

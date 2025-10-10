@@ -1,11 +1,16 @@
-// db.js
 import path from "path";
 import { fileURLToPath } from "url";
 import sqlite3 from "sqlite3";
 import pg from "pg";
 import fs from "fs";
+import dotenv from "dotenv";
 
+dotenv.config(); // ✅ ensure .env loads before checking DATABASE_URL
+
+// --- Force Postgres ---
 const isPg = !!process.env.DATABASE_URL;
+console.log(`🗄️  Database mode: ${isPg ? "PostgreSQL (Neon)" : "SQLite fallback"}`);
+
 
 function toPg(sql) {
   // Convert all '?' placeholders to $1, $2, $3 ... for Postgres

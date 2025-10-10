@@ -23,26 +23,50 @@
   </header>
 
   <main class="feed" style="max-width:480px">
-    <form action="/admin/login" method="post" class="post" style="padding:1rem">
+    <form action="/admin/login" method="post" autocomplete="off" class="post" style="padding:1rem">
       <h1 data-i18n="admin.login" style="margin:.25rem 0 1rem">Login</h1>
-      <% if (error) { %>
-        <p style="color:#ef4444"><%= error %></p>
+
+      <% if (flash && flash.error) { %>
+        <p style="color:#ef4444"><%= flash.error %></p>
       <% } %>
+
       <label>
         <span data-i18n="admin.username">Username</span><br>
-        <input type="text" name="username" required style="width:100%;padding:.5rem;border:1px solid var(--border);border-radius:.5rem;background:var(--bg);color:var(--text)">
+        <input type="text" name="username" required
+          style="width:100%;padding:.5rem;border:1px solid var(--border);
+          border-radius:.5rem;background:var(--bg);color:var(--text)">
       </label>
+
       <br><br>
+
       <label>
         <span data-i18n="admin.password">Password</span><br>
-        <input type="password" name="password" required style="width:100%;padding:.5rem;border:1px solid var(--border);border-radius:.5rem;background:var(--bg);color:var(--text)">
+        <input type="password" name="password" autocomplete="new-password" required
+          style="width:100%;padding:.5rem;border:1px solid var(--border);
+          border-radius:.5rem;background:var(--bg);color:var(--text)">
       </label>
+
       <br><br>
+
       <button class="share-btn" type="submit" data-i18n="admin.submit">Sign in</button>
     </form>
   </main>
 
   <script src="/public/i18n.js"></script>
   <script src="/public/common.js"></script>
+
+  <!-- ✅ Redirect only if already logged in -->
+  <script>
+  (async () => {
+    try {
+      const resp = await fetch('/admin/session-check');
+      const data = await resp.json();
+      if (data.loggedIn && window.location.pathname === '/admin/login') {
+        window.location.replace('/admin');
+      }
+    } catch (_) {}
+  })();
+  </script>
+
 </body>
 </html>
